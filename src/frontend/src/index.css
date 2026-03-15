@@ -1,0 +1,134 @@
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0.97 0.006 252;
+    --foreground: 0.18 0.04 258;
+    --card: 1 0 0;
+    --card-foreground: 0.18 0.04 258;
+    --popover: 1 0 0;
+    --popover-foreground: 0.18 0.04 258;
+    --primary: 0.28 0.1 258;
+    --primary-foreground: 0.98 0.005 252;
+    --secondary: 0.94 0.012 252;
+    --secondary-foreground: 0.28 0.1 258;
+    --muted: 0.94 0.008 252;
+    --muted-foreground: 0.52 0.025 258;
+    --accent: 0.53 0.19 172;
+    --accent-foreground: 0.98 0.005 172;
+    --destructive: 0.54 0.22 22;
+    --destructive-foreground: 0.98 0 0;
+    --border: 0.88 0.014 252;
+    --input: 0.88 0.014 252;
+    --ring: 0.53 0.19 172;
+    --radius: 0.625rem;
+
+    --chart-1: 0.55 0.18 145;
+    --chart-2: 0.55 0.22 22;
+    --chart-3: 0.55 0.16 232;
+    --chart-4: 0.72 0.18 87;
+    --chart-5: 0.53 0.19 172;
+
+    --sidebar: 0.97 0.006 252;
+    --sidebar-foreground: 0.18 0.04 258;
+    --sidebar-primary: 0.28 0.1 258;
+    --sidebar-primary-foreground: 0.98 0.005 252;
+    --sidebar-accent: 0.94 0.012 252;
+    --sidebar-accent-foreground: 0.28 0.1 258;
+    --sidebar-border: 0.88 0.014 252;
+    --sidebar-ring: 0.53 0.19 172;
+
+    /* Status color tokens */
+    --working: 0.55 0.18 145;
+    --working-bg: 0.95 0.06 145;
+    --leave: 0.54 0.22 22;
+    --leave-bg: 0.96 0.07 22;
+    --tour: 0.55 0.16 232;
+    --tour-bg: 0.95 0.06 232;
+    --overtime: 0.72 0.18 87;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .text-working {
+    color: oklch(var(--working));
+  }
+  .bg-working {
+    background-color: oklch(var(--working));
+  }
+  .bg-working-light {
+    background-color: oklch(var(--working-bg));
+  }
+  .border-working {
+    border-color: oklch(var(--working));
+  }
+
+  .text-leave {
+    color: oklch(var(--leave));
+  }
+  .bg-leave {
+    background-color: oklch(var(--leave));
+  }
+  .bg-leave-light {
+    background-color: oklch(var(--leave-bg));
+  }
+  .border-leave {
+    border-color: oklch(var(--leave));
+  }
+
+  .text-tour {
+    color: oklch(var(--tour));
+  }
+  .bg-tour {
+    background-color: oklch(var(--tour));
+  }
+  .bg-tour-light {
+    background-color: oklch(var(--tour-bg));
+  }
+  .border-tour {
+    border-color: oklch(var(--tour));
+  }
+
+  .text-overtime {
+    color: oklch(var(--overtime));
+  }
+  .bg-overtime {
+    background-color: oklch(var(--overtime));
+  }
+}
