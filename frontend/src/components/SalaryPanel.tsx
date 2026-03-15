@@ -2,14 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useActor } from "@/hooks/useActor";
 import { useGetSalary, useSetSalary } from "@/hooks/useQueries";
 import { CheckCircle2, Loader2, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function SalaryPanel() {
-  const { isFetching: isActorLoading } = useActor();
   const { data: currentSalary, isLoading } = useGetSalary();
   const setSalary = useSetSalary();
   const [inputValue, setInputValue] = useState("");
@@ -33,15 +31,13 @@ export function SalaryPanel() {
       setTimeout(() => setSaved(false), 2000);
       toast.success("Salary saved successfully!");
     } catch {
-      toast.error("Failed to save salary. Please try again.");
+      toast.error("Failed to save salary");
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSave();
   };
-
-  const isBusy = isActorLoading || isLoading || setSalary.isPending;
 
   return (
     <Card className="shadow-card border-border/60">
@@ -68,16 +64,16 @@ export function SalaryPanel() {
               onKeyDown={handleKeyDown}
               placeholder="50000"
               className="pl-7 rounded-lg"
-              disabled={isBusy}
+              disabled={isLoading}
             />
           </div>
           <Button
             onClick={handleSave}
-            disabled={isBusy}
+            disabled={setSalary.isPending || isLoading}
             data-ocid="salary.save_button"
             className="rounded-lg min-w-[80px]"
           >
-            {setSalary.isPending || isActorLoading ? (
+            {setSalary.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : saved ? (
               <CheckCircle2 className="h-4 w-4" />
@@ -86,23 +82,15 @@ export function SalaryPanel() {
             )}
           </Button>
         </div>
-        {isActorLoading && (
+        {currentSalary !== undefined && currentSalary > 0 && (
           <p className="text-xs text-muted-foreground mt-2">
-            <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
-            Connecting...
+            Current:{" "}
+            <span className="font-semibold text-foreground">
+              ₹{currentSalary.toLocaleString("en-IN")}
+            </span>
+            /month
           </p>
         )}
-        {!isActorLoading &&
-          currentSalary !== undefined &&
-          currentSalary > 0 && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Current:{" "}
-              <span className="font-semibold text-foreground">
-                ₹{currentSalary.toLocaleString("en-IN")}
-              </span>
-              /month
-            </p>
-          )}
       </CardContent>
     </Card>
   );

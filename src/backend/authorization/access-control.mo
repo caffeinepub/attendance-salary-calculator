@@ -37,13 +37,22 @@ module {
     };
   };
 
+  // Self-register a caller as a user (if not already registered).
+  public func register(state : AccessControlState, caller : Principal) {
+    if (caller.isAnonymous()) { return };
+    switch (state.userRoles.get(caller)) {
+      case (?_) {}; // Already registered
+      case (null) {
+        state.userRoles.add(caller, #user);
+      };
+    };
+  };
+
   public func getUserRole(state : AccessControlState, caller : Principal) : UserRole {
     if (caller.isAnonymous()) { return #guest };
     switch (state.userRoles.get(caller)) {
       case (?role) { role };
-      case (null) {
-        Runtime.trap("User is not registered");
-      };
+      case (null) { #guest }; // Unregistered users are treated as guests
     };
   };
 

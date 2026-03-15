@@ -27,7 +27,6 @@ export interface backendInterface {
     getMonthAttendance(year: bigint, month: bigint): Promise<Array<[bigint, string]>>;
     getSalary(): Promise<number>;
     isCallerAdmin(): Promise<boolean>;
-    registerUser(): Promise<void>;
     removeAttendance(year: bigint, month: bigint, day: bigint): Promise<void>;
     setAttendance(year: bigint, month: bigint, day: bigint, status: string, note: string): Promise<void>;
     setSalary(amount: number): Promise<void>;

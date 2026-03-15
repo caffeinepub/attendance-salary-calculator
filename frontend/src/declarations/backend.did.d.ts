@@ -31,7 +31,6 @@ export interface _SERVICE {
   'getMonthAttendance' : ActorMethod<[bigint, bigint], Array<[bigint, string]>>,
   'getSalary' : ActorMethod<[], number>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'registerUser' : ActorMethod<[], undefined>,
   'removeAttendance' : ActorMethod<[bigint, bigint, bigint], undefined>,
   'setAttendance' : ActorMethod<
     [bigint, bigint, bigint, string, string],

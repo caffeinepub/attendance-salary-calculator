@@ -45,21 +45,30 @@ actor {
   let attendance = Map.empty<Principal, Map.Map<Nat, Map.Map<Nat, AttendanceRecord>>>();
   let salaries = Map.empty<Principal, Float>();
 
-  func getAttendanceRecord(user : Principal, year : Nat, month : Nat) : AttendanceRecord {
+  // Public self-registration: any authenticated user can register themselves as a user.
+  public shared ({ caller }) func registerUser() : async () {
+    AccessControl.register(accessControlState, caller);
+  };
+
+  func getOrCreateAttendanceRecord(user : Principal, year : Nat, month : Nat) : AttendanceRecord {
     switch (attendance.get(user)) {
       case (null) {
         let newYear = Map.empty<Nat, Map.Map<Nat, AttendanceRecord>>();
         let newMonth = Map.empty<Nat, AttendanceRecord>();
+        let newRecord = Map.empty<Nat, DayStatus>();
+        newMonth.add(month, newRecord);
         newYear.add(year, newMonth);
         attendance.add(user, newYear);
-        Map.empty<Nat, DayStatus>();
+        newRecord;
       };
       case (?yearsMap) {
         switch (yearsMap.get(year)) {
           case (null) {
             let newMonth = Map.empty<Nat, AttendanceRecord>();
+            let newRecord = Map.empty<Nat, DayStatus>();
+            newMonth.add(month, newRecord);
             yearsMap.add(year, newMonth);
-            Map.empty<Nat, DayStatus>();
+            newRecord;
           };
           case (?monthsMap) {
             switch (monthsMap.get(month)) {
@@ -88,31 +97,8 @@ actor {
       case (_) { Runtime.trap("Invalid status") };
     };
 
-    let record = getAttendanceRecord(caller, year, month);
+    let record = getOrCreateAttendanceRecord(caller, year, month);
     record.add(day, dayStatus);
-
-    // Update the month record in the correct year
-    switch (attendance.get(caller)) {
-      case (null) {
-        let newYear = Map.empty<Nat, Map.Map<Nat, AttendanceRecord>>();
-        let newMonth = Map.empty<Nat, AttendanceRecord>();
-        newMonth.add(month, record);
-        newYear.add(year, newMonth);
-        attendance.add(caller, newYear);
-      };
-      case (?yearsMap) {
-        switch (yearsMap.get(year)) {
-          case (null) {
-            let newMonth = Map.empty<Nat, AttendanceRecord>();
-            newMonth.add(month, record);
-            yearsMap.add(year, newMonth);
-          };
-          case (?monthsMap) {
-            monthsMap.add(month, record);
-          };
-        };
-      };
-    };
   };
 
   public shared ({ caller }) func removeAttendance(year : Nat, month : Nat, day : Nat) : async () {
@@ -120,22 +106,48 @@ actor {
       Runtime.trap("Unauthorized: Only users can remove attendance");
     };
 
-    let record = getAttendanceRecord(caller, year, month);
-
-    if (not record.containsKey(day)) {
-      Runtime.trap("Attendance record does not exist");
+    switch (attendance.get(caller)) {
+      case (null) { Runtime.trap("No attendance records found") };
+      case (?yearsMap) {
+        switch (yearsMap.get(year)) {
+          case (null) { Runtime.trap("No records for this year") };
+          case (?monthsMap) {
+            switch (monthsMap.get(month)) {
+              case (null) { Runtime.trap("No records for this month") };
+              case (?record) {
+                if (not record.containsKey(day)) {
+                  Runtime.trap("Attendance record does not exist");
+                };
+                record.remove(day);
+              };
+            };
+          };
+        };
+      };
     };
-
-    record.remove(day);
   };
 
   public query ({ caller }) func getMonthAttendance(year : Nat, month : Nat) : async [(Nat, Text)] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view attendance");
+      return []; // Return empty for unregistered/unauthorized users
     };
 
-    let record = getAttendanceRecord(caller, year, month);
-    record.toArray().sort(DayStatus.compareByDay).map(func((day, status)) { (day, DayStatus.toText(status)) });
+    switch (attendance.get(caller)) {
+      case (null) { [] };
+      case (?yearsMap) {
+        switch (yearsMap.get(year)) {
+          case (null) { [] };
+          case (?monthsMap) {
+            switch (monthsMap.get(month)) {
+              case (null) { [] };
+              case (?record) {
+                record.toArray().sort(DayStatus.compareByDay).map(func((day, status)) { (day, DayStatus.toText(status)) });
+              };
+            };
+          };
+        };
+      };
+    };
   };
 
   public shared ({ caller }) func setSalary(amount : Float) : async () {
@@ -148,10 +160,10 @@ actor {
 
   public query ({ caller }) func getSalary() : async Float {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view salary");
+      return 0.0; // Return 0 for unauthorized/unregistered users
     };
     switch (salaries.get(caller)) {
-      case (null) { Runtime.trap("Salary not set") };
+      case (null) { 0.0 }; // Return 0 if salary not yet set
       case (?salary) { salary };
     };
   };
@@ -168,7 +180,6 @@ actor {
       Runtime.trap("Unauthorized: Only users can calculate payout");
     };
 
-    let record = getAttendanceRecord(caller, year, month);
     let grossSalary = switch (salaries.get(caller)) {
       case (null) { Runtime.trap("Salary not set") };
       case (?salary) { salary };
@@ -181,19 +192,34 @@ actor {
     var tourDays = 0;
     var sundayOvertimes = 0;
 
-    for (day in record.keys()) {
-      switch (record.get(day)) {
-        case (null) { workingDays += 1 };
-        case (?status) {
-          switch (status) {
-            case (#working(_)) {
-              workingDays += 1;
-              if (isSunday(year, month, day)) {
-                sundayOvertimes += 1;
+    switch (attendance.get(caller)) {
+      case (null) {};
+      case (?yearsMap) {
+        switch (yearsMap.get(year)) {
+          case (null) {};
+          case (?monthsMap) {
+            switch (monthsMap.get(month)) {
+              case (null) {};
+              case (?record) {
+                for (day in record.keys()) {
+                  switch (record.get(day)) {
+                    case (null) { workingDays += 1 };
+                    case (?status) {
+                      switch (status) {
+                        case (#working(_)) {
+                          workingDays += 1;
+                          if (isSunday(year, month, day)) {
+                            sundayOvertimes += 1;
+                          };
+                        };
+                        case (#leave(_)) { leaveDays += 1 };
+                        case (#tour(_)) { tourDays += 1 };
+                      };
+                    };
+                  };
+                };
               };
             };
-            case (#leave(_)) { leaveDays += 1 };
-            case (#tour(_)) { tourDays += 1 };
           };
         };
       };
@@ -224,7 +250,6 @@ actor {
   };
 
   func isSunday(year : Nat, month : Nat, day : Nat) : Bool {
-    // Convert to timestamp
     var weekday = (1 + day - 1) % 7;
     weekday == 0;
   };

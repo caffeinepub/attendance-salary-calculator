@@ -109,7 +109,6 @@ export interface backendInterface {
     getMonthAttendance(year: bigint, month: bigint): Promise<Array<[bigint, string]>>;
     getSalary(): Promise<number>;
     isCallerAdmin(): Promise<boolean>;
-    registerUser(): Promise<void>;
     removeAttendance(year: bigint, month: bigint, day: bigint): Promise<void>;
     setAttendance(year: bigint, month: bigint, day: bigint, status: string, note: string): Promise<void>;
     setSalary(amount: number): Promise<void>;
@@ -219,20 +218,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.isCallerAdmin();
-            return result;
-        }
-    }
-    async registerUser(): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.registerUser();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.registerUser();
             return result;
         }
     }
